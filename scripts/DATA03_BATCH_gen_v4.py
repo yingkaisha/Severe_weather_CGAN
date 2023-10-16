@@ -158,8 +158,8 @@ if lead == 2:
 else:
     leads = [lead-1, lead, lead+1]
 
-norm_stats = np.load('/glade/work/ksha/NCAR/stats_allv4_80km_full_lead{}{}{}.npy'.format(leads[0], leads[1], leads[2]))
-max_stats = np.load('/glade/work/ksha/NCAR/p90_allv4_80km_full_lead{}{}{}.npy'.format(leads[0], leads[1], leads[2]))
+norm_stats = np.load('/glade/work/ksha/NCAR/stats_allv4x_80km_full_lead{}{}{}.npy'.format(leads[0], leads[1], leads[2]))
+max_stats = np.load('/glade/work/ksha/NCAR/p90_allv4x_80km_full_lead{}{}{}.npy'.format(leads[0], leads[1], leads[2]))
 
 #L_train
 for day in range(0, L_train, 1):
