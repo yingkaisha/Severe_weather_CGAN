@@ -1,3 +1,7 @@
+'''
+Convert testing set 64-by-64 input frames into feature vectors.
+'''
+
 # general tools
 import sys
 from glob import glob
@@ -68,14 +72,10 @@ for i in range(len(W_new)):
     if W_new[i].shape == W_old[i].shape:
         W_new[i] = W_old[i]
     else:
-        # the size of the weights always match, this will never happen
+        # the size of the weights always match
         ewraewthws
 
-# dump new weights to the model
 model.set_weights(W_new)
-
-# compile just in case
-# model.compile(loss=keras.losses.mean_absolute_error, optimizer=keras.optimizers.SGD(lr=0))
 
 # predict feature vectors
 Y_vector = model.predict([TEST_input_64,])
