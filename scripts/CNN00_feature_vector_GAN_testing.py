@@ -1,3 +1,6 @@
+'''
+Compute CGAN outputs for the testing set samples.
+'''
 
 # general tools
 import os
@@ -20,14 +23,10 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument('lead', help='lead')
-# parser.add_argument('model', help='model')
-# parser.add_argument('prefix', help='prefix')
 args = vars(parser.parse_args())
 
 # =============== #
 lead = int(args['lead'])
-# model_name = args['model']
-# prefix = args['prefix']
 N_vars = L_vars = 15
 # =============== #
 
