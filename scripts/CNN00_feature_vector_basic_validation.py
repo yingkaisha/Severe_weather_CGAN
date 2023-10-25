@@ -1,3 +1,7 @@
+'''
+Convert validation set 64-by-64 input frames into feature vectors.
+'''
+
 # general tools
 import sys
 from glob import glob
