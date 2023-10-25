@@ -1,3 +1,7 @@
+'''
+CGAN training/tuning script for environmental predictors (MSLP, T2, RH, etc)
+'''
+
 # general tools
 import os
 import sys
