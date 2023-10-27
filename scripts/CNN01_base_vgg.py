@@ -142,7 +142,6 @@ for lead in leads:
 #             record_temp[-1, ...] = np.nan
 #             record_all = record_all + (record_temp,)
 
-
 #     shape_record = record_temp.shape      
 #     record_v3 = np.empty(shape_record)
 #     record_v3[...] = 0.0 #np.nan
@@ -159,7 +158,6 @@ for lead in leads:
 #                             record_v3[day, ix, iy, event] = 1.0
 #                         else:
 #                             record_v3[day, ix, iy, event] = 0.0
-    
 #     label_smooth_v3 += (record_v3[None, ...],)
     
 #     print('Collect HRRR v4x labels ...')
