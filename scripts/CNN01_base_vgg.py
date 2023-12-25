@@ -66,13 +66,17 @@ def filename_to_loc(filenames):
     return np.array(indx_out), np.array(indy_out), np.array(day_out), np.array(lead_out)
 
 # ==================== #
+seeds = 123456 # random seed
+
 weights_round = 4
 save_round = 5
-seeds = 123456
 model_prefix_load = 'RE2_smooth_vgg{}'.format(weights_round) #False
 model_prefix_save = 'RE2_smooth_vgg{}'.format(save_round)
+
 N_vars = L_vars = 15
-lr = 5e-5
+lr = 5e-5 # learning rate
+
+re_compute = False # re-compute severe weather labels for each training batch 
 # ==================== #
 
 vers = ['v3', 'v4x', 'v4'] # HRRR v4, v4x, v4
@@ -109,212 +113,215 @@ for lead in leads:
     
     pos_train_v4 += filenames_pos_train['{}_lead{}'.format('v4', lead)]
     neg_train_v4 += filenames_neg_train['{}_lead{}'.format('v4', lead)]
+
+# compute severe weather labels for each training batch
+if re_compute:   
+    label_smooth_v3 = ()
+    label_smooth_v4x = ()
+    label_smooth_v4 = ()
     
-# label_smooth_v3 = ()
-# label_smooth_v4x = ()
-# label_smooth_v4 = ()
-
-# for lead in leads:
-
-#     lead_window, flag_shift = neighbour_leads(lead)
+    for lead in leads:
     
-#     print('Collect HRRR v3 labels ...')
+        lead_window, flag_shift = neighbour_leads(lead)
+        
+        print('Collect HRRR v3 labels ...')
+        
+        record_all = ()
     
-#     record_all = ()
-
-#     for i, lead_temp in enumerate(lead_window):
-
-#         flag_ = flag_shift[i]
-
-#         with h5py.File(save_dir_scratch+'SPC_to_lead{}_72km_all.hdf'.format(lead_temp), 'r') as h5io:
-#             record_temp = h5io['record_v3'][...]
-
-#         if flag_shift[i] == 0:
-#             record_all = record_all + (record_temp,)
-
-#         if flag_shift[i] == -1:
-#             record_temp[1:, ...] = record_temp[:-1, ...]
-#             record_temp[0, ...] = np.nan
-#             record_all = record_all + (record_temp,)
-
-#         if flag_shift[i] == +1:
-#             record_temp[:-1, ...] = record_temp[1:, ...]
-#             record_temp[-1, ...] = np.nan
-#             record_all = record_all + (record_temp,)
-
-#     shape_record = record_temp.shape      
-#     record_v3 = np.empty(shape_record)
-#     record_v3[...] = 0.0 #np.nan
-
-#     for i in range(4):
-#         record_temp = record_all[i]
-#         for day in range(shape_record[0]):
-#             for ix in range(shape_record[1]):
-#                 for iy in range(shape_record[2]):
-#                     for event in range(shape_record[3]):
-#                         if record_temp[day, ix, iy, event] > 0:
-#                             record_v3[day, ix, iy, event] = 1.0
-#                         elif record_v3[day, ix, iy, event] == 1.0:
-#                             record_v3[day, ix, iy, event] = 1.0
-#                         else:
-#                             record_v3[day, ix, iy, event] = 0.0
-#     label_smooth_v3 += (record_v3[None, ...],)
+        for i, lead_temp in enumerate(lead_window):
     
-#     print('Collect HRRR v4x labels ...')
+            flag_ = flag_shift[i]
     
-#     record_all = ()
-
-#     for i, lead_temp in enumerate(lead_window):
-
-#         flag_ = flag_shift[i]
-
-#         with h5py.File(save_dir_scratch+'SPC_to_lead{}_72km_v4x.hdf'.format(lead_temp), 'r') as h5io:
-#             record_temp = h5io['record_v4x'][...]
-
-#         if flag_shift[i] == 0:
-#             record_all = record_all + (record_temp,)
-
-#         if flag_shift[i] == -1:
-#             record_temp[1:, ...] = record_temp[:-1, ...]
-#             record_temp[0, ...] = np.nan
-#             record_all = record_all + (record_temp,)
-
-#         if flag_shift[i] == +1:
-#             record_temp[:-1, ...] = record_temp[1:, ...]
-#             record_temp[-1, ...] = np.nan
-#             record_all = record_all + (record_temp,)
-
-
-#     shape_record = record_temp.shape      
-#     record_v4x = np.empty(shape_record)
-#     record_v4x[...] = np.nan
-
-#     for i in range(4):
-#         record_temp = record_all[i]
-#         for day in range(shape_record[0]):
-#             for ix in range(shape_record[1]):
-#                 for iy in range(shape_record[2]):
-#                     for event in range(shape_record[3]):
-#                         if record_temp[day, ix, iy, event] > 0:
-#                             record_v4x[day, ix, iy, event] = 1.0
-#                         elif record_v4x[day, ix, iy, event] == 1.0:
-#                             record_v4x[day, ix, iy, event] = 1.0
-#                         else:
-#                             record_v4x[day, ix, iy, event] = 0.0
+            with h5py.File(save_dir_scratch+'SPC_to_lead{}_72km_all.hdf'.format(lead_temp), 'r') as h5io:
+                record_temp = h5io['record_v3'][...]
     
-#     label_smooth_v4x += (record_v4x[None, ...],)
+            if flag_shift[i] == 0:
+                record_all = record_all + (record_temp,)
     
-#     print('Collect HRRR v4 labels ...')
+            if flag_shift[i] == -1:
+                record_temp[1:, ...] = record_temp[:-1, ...]
+                record_temp[0, ...] = np.nan
+                record_all = record_all + (record_temp,)
     
-#     record_all = ()
+            if flag_shift[i] == +1:
+                record_temp[:-1, ...] = record_temp[1:, ...]
+                record_temp[-1, ...] = np.nan
+                record_all = record_all + (record_temp,)
     
-#     for i, lead_temp in enumerate(lead_window):
-
-#         flag_ = flag_shift[i]
-
-#         with h5py.File(save_dir_scratch+'SPC_to_lead{}_72km_all.hdf'.format(lead_temp), 'r') as h5io:
-#             record_temp = h5io['record_v4'][...]
-
-#         if flag_shift[i] == 0:
-#             record_all = record_all + (record_temp,)
-
-#         if flag_shift[i] == -1:
-#             record_temp[1:, ...] = record_temp[:-1, ...]
-#             record_temp[0, ...] = np.nan
-#             record_all = record_all + (record_temp,)
-
-#         if flag_shift[i] == +1:
-#             record_temp[:-1, ...] = record_temp[1:, ...]
-#             record_temp[-1, ...] = np.nan
-#             record_all = record_all + (record_temp,)
+        shape_record = record_temp.shape      
+        record_v3 = np.empty(shape_record)
+        record_v3[...] = 0.0 #np.nan
+    
+        for i in range(4):
+            record_temp = record_all[i]
+            for day in range(shape_record[0]):
+                for ix in range(shape_record[1]):
+                    for iy in range(shape_record[2]):
+                        for event in range(shape_record[3]):
+                            if record_temp[day, ix, iy, event] > 0:
+                                record_v3[day, ix, iy, event] = 1.0
+                            elif record_v3[day, ix, iy, event] == 1.0:
+                                record_v3[day, ix, iy, event] = 1.0
+                            else:
+                                record_v3[day, ix, iy, event] = 0.0
+        label_smooth_v3 += (record_v3[None, ...],)
+        
+        print('Collect HRRR v4x labels ...')
+        
+        record_all = ()
+    
+        for i, lead_temp in enumerate(lead_window):
+    
+            flag_ = flag_shift[i]
+    
+            with h5py.File(save_dir_scratch+'SPC_to_lead{}_72km_v4x.hdf'.format(lead_temp), 'r') as h5io:
+                record_temp = h5io['record_v4x'][...]
+    
+            if flag_shift[i] == 0:
+                record_all = record_all + (record_temp,)
+    
+            if flag_shift[i] == -1:
+                record_temp[1:, ...] = record_temp[:-1, ...]
+                record_temp[0, ...] = np.nan
+                record_all = record_all + (record_temp,)
+    
+            if flag_shift[i] == +1:
+                record_temp[:-1, ...] = record_temp[1:, ...]
+                record_temp[-1, ...] = np.nan
+                record_all = record_all + (record_temp,)
+    
+    
+        shape_record = record_temp.shape      
+        record_v4x = np.empty(shape_record)
+        record_v4x[...] = np.nan
+    
+        for i in range(4):
+            record_temp = record_all[i]
+            for day in range(shape_record[0]):
+                for ix in range(shape_record[1]):
+                    for iy in range(shape_record[2]):
+                        for event in range(shape_record[3]):
+                            if record_temp[day, ix, iy, event] > 0:
+                                record_v4x[day, ix, iy, event] = 1.0
+                            elif record_v4x[day, ix, iy, event] == 1.0:
+                                record_v4x[day, ix, iy, event] = 1.0
+                            else:
+                                record_v4x[day, ix, iy, event] = 0.0
+        
+        label_smooth_v4x += (record_v4x[None, ...],)
+        
+        print('Collect HRRR v4 labels ...')
+        
+        record_all = ()
+        
+        for i, lead_temp in enumerate(lead_window):
+    
+            flag_ = flag_shift[i]
+    
+            with h5py.File(save_dir_scratch+'SPC_to_lead{}_72km_all.hdf'.format(lead_temp), 'r') as h5io:
+                record_temp = h5io['record_v4'][...]
+    
+            if flag_shift[i] == 0:
+                record_all = record_all + (record_temp,)
+    
+            if flag_shift[i] == -1:
+                record_temp[1:, ...] = record_temp[:-1, ...]
+                record_temp[0, ...] = np.nan
+                record_all = record_all + (record_temp,)
+    
+            if flag_shift[i] == +1:
+                record_temp[:-1, ...] = record_temp[1:, ...]
+                record_temp[-1, ...] = np.nan
+                record_all = record_all + (record_temp,)
+                
+                
+        shape_record = record_temp.shape      
+        record_v4 = np.empty(shape_record)
+        record_v4[...] = 0.0 #np.nan
+    
+        for i in range(4):
+            record_temp = record_all[i]
+            for day in range(shape_record[0]):
+                for ix in range(shape_record[1]):
+                    for iy in range(shape_record[2]):
+                        for event in range(shape_record[3]):
+                            if record_temp[day, ix, iy, event] > 0:
+                                record_v4[day, ix, iy, event] = 1.0
+                            elif record_v4[day, ix, iy, event] == 1.0:
+                                record_v4[day, ix, iy, event] = 1.0
+                            else:
+                                record_v4[day, ix, iy, event] = 0.0
+                                
+        label_smooth_v4 += (record_v4[None, ...],)
+        
+        print('... Done')
+        
+    label_concat_v3 = np.concatenate(label_smooth_v3, axis=0)
+    label_concat_v4x = np.concatenate(label_smooth_v4x, axis=0)
+    label_concat_v4 = np.concatenate(label_smooth_v4, axis=0)
+    
+    label_concat_v3 = np.sum(label_concat_v3, axis=-1)
+    label_concat_v3[label_concat_v3>1] = 1
+    
+    label_concat_v4 = np.sum(label_concat_v4, axis=-1)
+    label_concat_v4[label_concat_v4>1] = 1
+    
+    label_concat_v4x = np.sum(label_concat_v4x, axis=-1)
+    label_concat_v4x[label_concat_v4x>1] = 1
+    
+    shape_label_v3 = label_concat_v3.shape
+    shape_label_v4 = label_concat_v4.shape
+    shape_label_v4x = label_concat_v4x.shape
+    
+    label_final_v3 = np.empty(shape_label_v3)
+    label_final_v4 = np.empty(shape_label_v4)
+    label_final_v4x = np.empty(shape_label_v4x)
+    
+    for i in range(shape_label_v3[0]):
+        for j in range(shape_label_v3[1]):
+            label_final_v3[i, j, ...] = scipy.ndimage.gaussian_filter(label_concat_v3[i, j], sigma=2.5)
             
+    for i in range(shape_label_v4[0]):
+        for j in range(shape_label_v4[1]):
+            label_final_v4[i, j, ...] = scipy.ndimage.gaussian_filter(label_concat_v4[i, j], sigma=2.5)
             
-#     shape_record = record_temp.shape      
-#     record_v4 = np.empty(shape_record)
-#     record_v4[...] = 0.0 #np.nan
-
-#     for i in range(4):
-#         record_temp = record_all[i]
-#         for day in range(shape_record[0]):
-#             for ix in range(shape_record[1]):
-#                 for iy in range(shape_record[2]):
-#                     for event in range(shape_record[3]):
-#                         if record_temp[day, ix, iy, event] > 0:
-#                             record_v4[day, ix, iy, event] = 1.0
-#                         elif record_v4[day, ix, iy, event] == 1.0:
-#                             record_v4[day, ix, iy, event] = 1.0
-#                         else:
-#                             record_v4[day, ix, iy, event] = 0.0
-                            
-#     label_smooth_v4 += (record_v4[None, ...],)
+    for i in range(shape_label_v4x[0]):
+        for j in range(shape_label_v4x[1]):
+            label_final_v4x[i, j, ...] = scipy.ndimage.gaussian_filter(label_concat_v4x[i, j], sigma=2.5)
+            
+    indx_pos_train_v3, indy_pos_train_v3, day_pos_train_v3, lead_pos_train_v3 = filename_to_loc(pos_train_v3)
+    indx_neg_train_v3, indy_neg_train_v3, day_neg_train_v3, lead_neg_train_v3 = filename_to_loc(neg_train_v3)
     
-#     print('... Done')
+    lead_pos_train_v3 = lead_pos_train_v3 - 2
+    lead_neg_train_v3 = lead_neg_train_v3 - 2
     
-# label_concat_v3 = np.concatenate(label_smooth_v3, axis=0)
-# label_concat_v4x = np.concatenate(label_smooth_v4x, axis=0)
-# label_concat_v4 = np.concatenate(label_smooth_v4, axis=0)
+    y_pos_train_v3 = label_final_v3[lead_pos_train_v3, day_pos_train_v3, indx_pos_train_v3, indy_pos_train_v3]
+    y_neg_train_v3 = label_final_v3[lead_neg_train_v3, day_neg_train_v3, indx_neg_train_v3, indy_neg_train_v3]   
+    
+    indx_pos_train_v4x, indy_pos_train_v4x, day_pos_train_v4x, lead_pos_train_v4x = filename_to_loc(pos_train_v4x)
+    indx_neg_train_v4x, indy_neg_train_v4x, day_neg_train_v4x, lead_neg_train_v4x = filename_to_loc(neg_train_v4x)
+    
+    lead_pos_train_v4x = lead_pos_train_v4x - 2
+    lead_neg_train_v4x = lead_neg_train_v4x - 2
+    
+    y_pos_train_v4x = label_final_v4x[lead_pos_train_v4x, day_pos_train_v4x, indx_pos_train_v4x, indy_pos_train_v4x]
+    y_neg_train_v4x = label_final_v4x[lead_neg_train_v4x, day_neg_train_v4x, indx_neg_train_v4x, indy_neg_train_v4x]
+    
+    y_pos_train_all = np.concatenate((y_pos_train_v3, y_pos_train_v4x,), axis=0)
+    y_neg_train_all = np.concatenate((y_neg_train_v3, y_neg_train_v4x,), axis=0)
+    
+    y_pos_train_all_adjust = np.copy(y_pos_train_all) + 0.75
+    y_pos_train_all_adjust[y_pos_train_all_adjust>0.99] = 0.99
+    
+    y_neg_train_all_adjust = np.copy(y_neg_train_all)
+    # y_neg_train_all_adjust[y_neg_train_all_adjust>0.49] = 0.49
+    
+    np.save(save_dir_campaign+'y_pos_train_all_adjust.npy', y_pos_train_all_adjust)
+    np.save(save_dir_campaign+'y_neg_train_all_adjust.npy', y_neg_train_all_adjust)
 
-# label_concat_v3 = np.sum(label_concat_v3, axis=-1)
-# label_concat_v3[label_concat_v3>1] = 1
-
-# label_concat_v4 = np.sum(label_concat_v4, axis=-1)
-# label_concat_v4[label_concat_v4>1] = 1
-
-# label_concat_v4x = np.sum(label_concat_v4x, axis=-1)
-# label_concat_v4x[label_concat_v4x>1] = 1
-
-# shape_label_v3 = label_concat_v3.shape
-# shape_label_v4 = label_concat_v4.shape
-# shape_label_v4x = label_concat_v4x.shape
-
-# label_final_v3 = np.empty(shape_label_v3)
-# label_final_v4 = np.empty(shape_label_v4)
-# label_final_v4x = np.empty(shape_label_v4x)
-
-# for i in range(shape_label_v3[0]):
-#     for j in range(shape_label_v3[1]):
-#         label_final_v3[i, j, ...] = scipy.ndimage.gaussian_filter(label_concat_v3[i, j], sigma=2.5)
-        
-# for i in range(shape_label_v4[0]):
-#     for j in range(shape_label_v4[1]):
-#         label_final_v4[i, j, ...] = scipy.ndimage.gaussian_filter(label_concat_v4[i, j], sigma=2.5)
-        
-# for i in range(shape_label_v4x[0]):
-#     for j in range(shape_label_v4x[1]):
-#         label_final_v4x[i, j, ...] = scipy.ndimage.gaussian_filter(label_concat_v4x[i, j], sigma=2.5)
-        
-# indx_pos_train_v3, indy_pos_train_v3, day_pos_train_v3, lead_pos_train_v3 = filename_to_loc(pos_train_v3)
-# indx_neg_train_v3, indy_neg_train_v3, day_neg_train_v3, lead_neg_train_v3 = filename_to_loc(neg_train_v3)
-
-# lead_pos_train_v3 = lead_pos_train_v3 - 2
-# lead_neg_train_v3 = lead_neg_train_v3 - 2
-
-# y_pos_train_v3 = label_final_v3[lead_pos_train_v3, day_pos_train_v3, indx_pos_train_v3, indy_pos_train_v3]
-# y_neg_train_v3 = label_final_v3[lead_neg_train_v3, day_neg_train_v3, indx_neg_train_v3, indy_neg_train_v3]   
-
-# indx_pos_train_v4x, indy_pos_train_v4x, day_pos_train_v4x, lead_pos_train_v4x = filename_to_loc(pos_train_v4x)
-# indx_neg_train_v4x, indy_neg_train_v4x, day_neg_train_v4x, lead_neg_train_v4x = filename_to_loc(neg_train_v4x)
-
-# lead_pos_train_v4x = lead_pos_train_v4x - 2
-# lead_neg_train_v4x = lead_neg_train_v4x - 2
-
-# y_pos_train_v4x = label_final_v4x[lead_pos_train_v4x, day_pos_train_v4x, indx_pos_train_v4x, indy_pos_train_v4x]
-# y_neg_train_v4x = label_final_v4x[lead_neg_train_v4x, day_neg_train_v4x, indx_neg_train_v4x, indy_neg_train_v4x]
-
-# y_pos_train_all = np.concatenate((y_pos_train_v3, y_pos_train_v4x,), axis=0)
-# y_neg_train_all = np.concatenate((y_neg_train_v3, y_neg_train_v4x,), axis=0)
-
-# y_pos_train_all_adjust = np.copy(y_pos_train_all) + 0.75
-# y_pos_train_all_adjust[y_pos_train_all_adjust>0.99] = 0.99
-
-# y_neg_train_all_adjust = np.copy(y_neg_train_all)
-# # y_neg_train_all_adjust[y_neg_train_all_adjust>0.49] = 0.49
-
-# np.save(save_dir_campaign+'y_pos_train_all_adjust.npy', y_pos_train_all_adjust)
-# np.save(save_dir_campaign+'y_neg_train_all_adjust.npy', y_neg_train_all_adjust)
-
-y_pos_train_all_adjust = np.load(save_dir_campaign+'y_pos_train_all_adjust.npy')
-y_neg_train_all_adjust = np.load(save_dir_campaign+'y_neg_train_all_adjust.npy')
+else:
+    y_pos_train_all_adjust = np.load(save_dir_campaign+'y_pos_train_all_adjust.npy')
+    y_neg_train_all_adjust = np.load(save_dir_campaign+'y_neg_train_all_adjust.npy')
 
 ind_pick_from_batch = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
 
