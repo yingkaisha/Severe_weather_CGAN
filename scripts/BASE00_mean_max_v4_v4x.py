@@ -1,6 +1,7 @@
 '''
 Compute the max and mean values from each 64-by-64 training batch and all its predictors.
-The max and mean values are applied to the development of an MLP baseline.
+The max and mean values are applied as predictors of an MLP baseline.
+
 v4x mean max values are used for standardization.
 v4 mean max values are used for comparisons.
 '''
